@@ -43,7 +43,7 @@
             this.tsmiForegroundColor = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiBackgroundColor = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.tsmiAutoStart = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiRunOnStartup = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.tsmiQuit = new System.Windows.Forms.ToolStripMenuItem();
             this.timer = new System.Windows.Forms.Timer(this.components);
@@ -81,7 +81,7 @@
             this.tsmiChooseFont,
             this.tsmiColors,
             this.toolStripSeparator3,
-            this.tsmiAutoStart,
+            this.tsmiRunOnStartup,
             this.toolStripSeparator4,
             this.tsmiQuit});
             this.contextMenuStrip.Name = "contextMenuStrip";
@@ -161,11 +161,12 @@
             this.toolStripSeparator3.Name = "toolStripSeparator3";
             this.toolStripSeparator3.Size = new System.Drawing.Size(201, 6);
             // 
-            // tsmiAutoStart
+            // tsmiRunOnStartup
             // 
-            this.tsmiAutoStart.Name = "tsmiAutoStart";
-            this.tsmiAutoStart.Size = new System.Drawing.Size(204, 22);
-            this.tsmiAutoStart.Text = "Run on Windows startup";
+            this.tsmiRunOnStartup.CheckOnClick = true;
+            this.tsmiRunOnStartup.Name = "tsmiRunOnStartup";
+            this.tsmiRunOnStartup.Size = new System.Drawing.Size(204, 22);
+            this.tsmiRunOnStartup.Text = "Run on Windows startup";
             // 
             // toolStripSeparator4
             // 
@@ -189,7 +190,7 @@
             this.checkBoxShowDate.AutoSize = true;
             this.checkBoxShowDate.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.checkBoxShowDate.Location = new System.Drawing.Point(9, 213);
-            this.checkBoxShowDate.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.checkBoxShowDate.Margin = new System.Windows.Forms.Padding(2);
             this.checkBoxShowDate.Name = "checkBoxShowDate";
             this.checkBoxShowDate.Size = new System.Drawing.Size(159, 28);
             this.checkBoxShowDate.TabIndex = 1;
@@ -202,7 +203,7 @@
             this.checkBoxShowWeekday.AutoSize = true;
             this.checkBoxShowWeekday.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.checkBoxShowWeekday.Location = new System.Drawing.Point(9, 245);
-            this.checkBoxShowWeekday.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.checkBoxShowWeekday.Margin = new System.Windows.Forms.Padding(2);
             this.checkBoxShowWeekday.Name = "checkBoxShowWeekday";
             this.checkBoxShowWeekday.Size = new System.Drawing.Size(234, 28);
             this.checkBoxShowWeekday.TabIndex = 2;
@@ -214,7 +215,7 @@
             // 
             this.buttonHideControls.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.buttonHideControls.Location = new System.Drawing.Point(9, 276);
-            this.buttonHideControls.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.buttonHideControls.Margin = new System.Windows.Forms.Padding(2);
             this.buttonHideControls.Name = "buttonHideControls";
             this.buttonHideControls.Size = new System.Drawing.Size(298, 47);
             this.buttonHideControls.TabIndex = 3;
@@ -242,7 +243,7 @@
             this.Controls.Add(this.labelTime);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "MainForm";
             this.Text = "Clock_CPU_411";
             this.contextMenuStrip.ResumeLayout(false);
@@ -272,7 +273,7 @@
 		private System.Windows.Forms.ToolStripMenuItem tsmiForegroundColor;
 		private System.Windows.Forms.ToolStripMenuItem tsmiBackgroundColor;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-		private System.Windows.Forms.ToolStripMenuItem tsmiAutoStart;
+		private System.Windows.Forms.ToolStripMenuItem tsmiRunOnStartup;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
 	}
 }
