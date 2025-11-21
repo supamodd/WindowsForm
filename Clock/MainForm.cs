@@ -15,7 +15,6 @@ namespace Clock
 {
     public partial class MainForm : Form
     {
-        // === Константы для автозапуска ===
         private const string StartupRegistryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "DigitalClock";
 
@@ -23,31 +22,26 @@ namespace Clock
         {
             InitializeComponent();
 
-            // === Привязка контекстного меню ===
             labelTime.ContextMenuStrip = contextMenuStrip;
             notifyIcon.ContextMenuStrip = contextMenuStrip;
 
-            // === Дополнительно: принудительное открытие по ПКМ ===
             labelTime.MouseDown += (s, e) =>
             {
                 if (e.Button == MouseButtons.Right)
                     contextMenuStrip.Show(labelTime, e.Location);
             };
 
-            // === Подписки на новые пункты меню ===
             tsmiForegroundColor.Click += tsmiForegroundColor_Click;
             tsmiBackgroundColor.Click += tsmiBackgroundColor_Click;
             tsmiChooseFont.Click += tsmiChooseFont_Click;
             tsmiRunOnStartup.Click += tsmiRunOnStartup_Click;
 
-            // === Загружаем настройки и позиционируем ===
             LoadSettings();
             StartPosition = FormStartPosition.Manual;
             PositionInTopRight();
             timer.Start();
         }
 
-        // === Обновление времени ===
         private void timer_Tick(object sender, EventArgs e)
         {
             var now = DateTime.Now;
@@ -56,21 +50,18 @@ namespace Clock
             if (checkBoxShowDate.Checked)
                 labelTime.Text += $"\n{now:yyyy.MM.dd}";
             if (checkBoxShowWeekday.Checked)
-                labelTime.Text += $"\n{now:dddd}"; // Monday, Tuesday...
+                labelTime.Text += $"\n{now:dddd}"; 
 
-            // Применяем только шрифт и цвет текста
             labelTime.Font = Settings.Default.CustomFont;
             labelTime.ForeColor = Settings.Default.ForeColor;
         }
 
-        // === Позиция в правом верхнем углу ===
         private void PositionInTopRight()
         {
             var area = Screen.PrimaryScreen.WorkingArea;
             this.Location = new Point(area.Right - this.Width - 10, area.Top + 10);
         }
 
-        // === Управление видимостью элементов ===
         private void SetVisibility(bool visible)
         {
             checkBoxShowDate.Visible = visible;
@@ -78,14 +69,12 @@ namespace Clock
             buttonHideControls.Visible = visible;
             this.FormBorderStyle = visible ? FormBorderStyle.FixedToolWindow : FormBorderStyle.None;
 
-            // TransparencyKey использует уже загруженный BackColor
             this.TransparencyKey = visible ? Color.Empty : this.BackColor;
 
             ShowInTaskbar = visible;
             Settings.Default.ShowControls = visible;
         }
 
-        // === Обработчики кнопок и чекбоксов ===
         private void buttonHideControls_Click(object sender, EventArgs e) =>
             SetVisibility(tsmiShowControls.Checked = false);
 
@@ -122,7 +111,6 @@ namespace Clock
         private void tsmiShowControls_Click(object sender, EventArgs e) =>
             SetVisibility(tsmiShowControls.Checked);
 
-        // === 1. Цвет текста ===
         private void tsmiForegroundColor_Click(object sender, EventArgs e)
         {
             using (var dlg = new ColorDialog { Color = Settings.Default.ForeColor })
@@ -135,7 +123,6 @@ namespace Clock
             }
         }
 
-        // === 1. Цвет фона ===
         private void tsmiBackgroundColor_Click(object sender, EventArgs e)
         {
             using (var dlg = new ColorDialog { Color = Settings.Default.BackColor })
@@ -149,7 +136,6 @@ namespace Clock
             }
         }
 
-        // === 3. Выбор шрифта ===
         private void tsmiChooseFont_Click(object sender, EventArgs e)
         {
             using (var dlg = new FontDialog { Font = Settings.Default.CustomFont })
@@ -162,7 +148,6 @@ namespace Clock
             }
         }
 
-        // === 4. Автозапуск при старте Windows ===
         private void tsmiRunOnStartup_Click(object sender, EventArgs e)
         {
             bool enable = tsmiRunOnStartup.Checked;
@@ -176,7 +161,6 @@ namespace Clock
             Settings.Default.RunOnStartup = enable;
         }
 
-        // === 5. Сохранение настроек ===
         private void SaveSettings()
         {
             var s = Settings.Default;
@@ -189,34 +173,27 @@ namespace Clock
             s.Save();
         }
 
-        // === 5. Загрузка настроек (ИСПРАВЛЕН ПОРЯДОК!) ===
         private void LoadSettings()
         {
             var s = Settings.Default;
-
-            // 1. Сначала цвета и шрифт (чтобы TransparencyKey был правильным)
             labelTime.ForeColor = s.ForeColor;
             this.BackColor = s.BackColor;
             labelTime.Font = s.CustomFont;
 
-            // 2. Позиция
             if (s.WindowLocation != Point.Empty)
                 this.Location = s.WindowLocation;
             else
                 PositionInTopRight();
 
-            // 3. Видимость (уже с правильным BackColor!)
             tsmiShowControls.Checked = s.ShowControls;
             SetVisibility(s.ShowControls);
 
-            // 4. Остальные настройки
             this.TopMost = s.Topmost; tsmiTopmost.Checked = s.Topmost;
             checkBoxShowDate.Checked = s.ShowDate; tsmiShowDate.Checked = s.ShowDate;
             checkBoxShowWeekday.Checked = s.ShowWeekday; tsmiShowWeekday.Checked = s.ShowWeekday;
             tsmiRunOnStartup.Checked = s.RunOnStartup; UpdateStartupRegistry();
         }
 
-        // === Синхронизация автозапуска с реестром ===
         private void UpdateStartupRegistry()
         {
             using (var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKey, true))
@@ -232,7 +209,6 @@ namespace Clock
             }
         }
 
-        // === Сохранение при закрытии ===
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveSettings();
