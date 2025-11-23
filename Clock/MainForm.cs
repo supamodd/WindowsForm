@@ -7,39 +7,50 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace Clock
 {
 	public partial class MainForm : Form
 	{
+		ColorDialog backgroundDialog;
+		ColorDialog foregroundDialog;
+		ChooseFont fontDialog;
 		public MainForm()
 		{
 			InitializeComponent();
 			SetVisibility(false);
+			backgroundDialog = new ColorDialog();
+			foregroundDialog = new ColorDialog();
+			fontDialog = new ChooseFont();
+			this.Location = new Point
+				(
+					Screen.PrimaryScreen.Bounds.Width - this.labelTime.Width - 150,
+					50
+				);
 		}
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			//labelTime.Text = DateTime.Now.ToString("HH:mm:ss"); //24-час
-			labelTime.Text = DateTime.Now.ToString("hh:mm:ss tt", 
-				System.Globalization.CultureInfo.InvariantCulture); //12-час AM-PM
+			//labelTime.Text = DateTime.Now.ToString("HH:mm:ss");//24-часовой формат
+			labelTime.Text = DateTime.Now.ToString
+				(
+				"hh:mm:ss tt",  //mm - minutes
+				System.Globalization.CultureInfo.InvariantCulture   //AM/PM fix
+				);  //12-часовой формат
 			if (checkBoxShowDate.Checked)
-			{
-				labelTime.Text += $"\n{DateTime.Now.ToString("yyyy.MM.dd")}";
-			}
+				labelTime.Text += $"\n{DateTime.Now.ToString("yyyy.MM.dd")}";//MM - Month
 			if (checkBoxShowWeekday.Checked)
-			{ 
 				labelTime.Text += $"\n{DateTime.Now.DayOfWeek}";
-			}
 		}
-		void SetVisibility (bool visible)
+		void SetVisibility(bool visible)
 		{
 			checkBoxShowDate.Visible = visible;
 			checkBoxShowWeekday.Visible = visible;
 			buttonHideControls.Visible = visible;
-			this.FormBorderStyle = visible?  FormBorderStyle.FixedToolWindow : FormBorderStyle.None;
+			this.FormBorderStyle = visible ? FormBorderStyle.FixedToolWindow : FormBorderStyle.None;
 			this.TransparencyKey = visible ? Color.Empty : this.BackColor;
-			ShowInTaskbar = visible;
+			this.ShowInTaskbar = visible;
 		}
 		private void buttonHideControls_Click(object sender, EventArgs e) =>
 			SetVisibility(tsmiShowControls.Checked = false);
@@ -51,11 +62,9 @@ namespace Clock
 		{
 			this.TopMost = true;
 			this.TopMost = false;
-
 		}
 
-		private void tsmiQuit_Click(object sender, EventArgs e) =>
-			this.Close();	
+		private void tsmiQuit_Click(object sender, EventArgs e) => this.Close();
 
 		private void tsmiTopmost_Click(object sender, EventArgs e) =>
 			this.TopMost = tsmiTopmost.Checked;
@@ -69,10 +78,39 @@ namespace Clock
 		private void tsmiShowWeekday_Click(object sender, EventArgs e) =>
 			checkBoxShowWeekday.Checked = tsmiShowWeekday.Checked;
 
-		private void checkBoxShowWeekday_CheckedChanged(object sender, EventArgs e) =>
+		private void checkBoxShowWeekday_CheckedChanged(object sender, EventArgs e)
+		{
 			tsmiShowWeekday.Checked = (sender as CheckBox).Checked;
+			//tsmiShowWeekday.Checked = ((CheckBox)sender).Checked;
+		}
 
 		private void tsmiShowControls_Click(object sender, EventArgs e) =>
 			SetVisibility(tsmiShowControls.Checked);
+
+		private void tsmiBackgroudColor_Click(object sender, EventArgs e)
+		{
+			if (backgroundDialog.ShowDialog() == DialogResult.OK)
+				labelTime.BackColor = backgroundDialog.Color;
+		}
+
+		private void tsmiForegroundColor_Click(object sender, EventArgs e)
+		{
+			if (foregroundDialog.ShowDialog() == DialogResult.OK)
+				labelTime.ForeColor = foregroundDialog.Color;
+		}
+		private void tsmiChooseFont_Click(object sender, EventArgs e)
+		{
+			if (fontDialog.ShowDialog() == DialogResult.OK)
+				labelTime.Font = fontDialog.Font;
+		}
+		[DllImport("kernel32.dll")]
+		public static extern bool AllocConsole();
+		[DllImport("kernel32.dll")]
+		public static extern bool FreeConsole();
+		private void tsmiShowConsole_CheckedChanged(object sender, EventArgs e)
+		{
+			bool console = (sender as ToolStripMenuItem).Checked ? AllocConsole() : FreeConsole();
+		}
+
 	}
 }
