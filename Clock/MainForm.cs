@@ -20,20 +20,17 @@ namespace Clock
         ColorDialog foregroundDialog;
         ChooseFont fontDialog;
 
-        // ======== БУДИЛЬНИКИ ========
-        private List<Alarm> alarms = new List<Alarm>();
-        private readonly string settingsFile = Path.Combine(Application.StartupPath, "alarms.json");
-        private System.Media.SoundPlayer soundPlayer = new System.Media.SoundPlayer();
-        private ToolStripMenuItem tsmiAlarms;
-
-        // ←←← ВАЖНО: Это поле предотвращает множественное срабатывание будильника
-        private readonly HashSet<Alarm> _triggeredAlarms = new HashSet<Alarm>();
+                                                              // ======== БУДИЛЬНИКИ ========
+         List<Alarm> alarms = new List<Alarm>();
+        string settingsFile = Path.Combine(Application.StartupPath, "alarms.json");
+        System.Media.SoundPlayer soundPlayer = new System.Media.SoundPlayer();
+        ToolStripMenuItem tsmiAlarms;
+        HashSet<Alarm> _triggeredAlarms = new HashSet<Alarm>();
 
         public MainForm()
         {
             InitializeComponent();
 
-            // Иконка в трее — всегда видна
             notifyIcon.Visible = true;
             notifyIcon.Text = "Clock SPU_411";
 
@@ -123,7 +120,7 @@ namespace Clock
             else FreeConsole();
         }
 
-        // ====================== БУДИЛЬНИКИ ======================
+                                                     // БУДИЛЬНИКИ 
 
         private void CreateAlarmsMenu()
         {
@@ -219,8 +216,8 @@ namespace Clock
         {
             var now = DateTime.Now;
             foreach (var alarm in alarms.Where(a => a.Enabled))
-            {
-                // Срабатывает ТОЛЬКО ОДИН РАЗ — в начале нужной минуты (секунда == 0)
+            {  
+                             // чтобы срабатывал 1 раз
                 if (now.Hour == alarm.Time.Hours &&
                     now.Minute == alarm.Time.Minutes &&
                     now.Second == 0 &&
@@ -228,7 +225,6 @@ namespace Clock
                 {
                     _triggeredAlarms.Add(alarm);
 
-                    // === ЗВУК (безопасно, один раз) ===
                     Task.Run(() =>
                     {
                         try
@@ -257,7 +253,7 @@ namespace Clock
                         catch { }
                     });
 
-                    // === Уведомление ===
+                                                             //  Уведомление 
                     string timeText = alarm.Time.ToString(@"hh\:mm");
 
                     notifyIcon.ShowBalloonTip(10000, "Будильник!", $"{alarm.Name} — {timeText}", ToolTipIcon.Info);
@@ -273,7 +269,7 @@ namespace Clock
                         "Время пришло!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
 
-                // Сбрасываем флаг после прохождения минуты
+                                             // скидывает флажок после срабаттыванияч 
                 if (now.Hour != alarm.Time.Hours || now.Minute != alarm.Time.Minutes)
                 {
                     _triggeredAlarms.Remove(alarm);
