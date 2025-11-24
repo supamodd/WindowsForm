@@ -29,6 +29,7 @@
 		private void InitializeComponent()
 		{
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.labelTime = new System.Windows.Forms.Label();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.tsmiTopmost = new System.Windows.Forms.ToolStripMenuItem();
@@ -84,7 +85,7 @@
             this.toolStripSeparator4,
             this.tsmiQuit});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(205, 248);
+            this.contextMenuStrip.Size = new System.Drawing.Size(205, 226);
             // 
             // tsmiTopmost
             // 
@@ -155,14 +156,14 @@
             // tsmiForegroundColor
             // 
             this.tsmiForegroundColor.Name = "tsmiForegroundColor";
-            this.tsmiForegroundColor.Size = new System.Drawing.Size(180, 22);
+            this.tsmiForegroundColor.Size = new System.Drawing.Size(168, 22);
             this.tsmiForegroundColor.Text = "Foreground color";
             this.tsmiForegroundColor.Click += new System.EventHandler(this.tsmiForegroundColor_Click);
             // 
             // tsmiBackgroudColor
             // 
             this.tsmiBackgroudColor.Name = "tsmiBackgroudColor";
-            this.tsmiBackgroudColor.Size = new System.Drawing.Size(180, 22);
+            this.tsmiBackgroudColor.Size = new System.Drawing.Size(168, 22);
             this.tsmiBackgroudColor.Text = "Background color";
             this.tsmiBackgroudColor.Click += new System.EventHandler(this.tsmiBackgroudColor_Click);
             // 
@@ -232,6 +233,7 @@
             // notifyIcon
             // 
             this.notifyIcon.ContextMenuStrip = this.contextMenuStrip;
+            this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
             this.notifyIcon.Text = "Clock SPU_411";
             this.notifyIcon.Visible = true;
             this.notifyIcon.DoubleClick += new System.EventHandler(this.notifyIcon_DoubleClick);
@@ -247,10 +249,10 @@
             this.Controls.Add(this.labelTime);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Clock_SPU_411";
-            this.Load += new System.EventHandler(this.MainForm_Load);
             this.contextMenuStrip.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -1,15 +1,16 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using System.Text;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.IO;                    
-using Newtonsoft.Json;
 
 namespace Clock
 {
@@ -23,17 +24,24 @@ namespace Clock
         private List<Alarm> alarms = new List<Alarm>();
         private readonly string settingsFile = Path.Combine(Application.StartupPath, "alarms.json");
         private System.Media.SoundPlayer soundPlayer = new System.Media.SoundPlayer();
-        private ToolStripMenuItem tsmiAlarms; // ссылка на пункт "Будильники"
+        private ToolStripMenuItem tsmiAlarms;
+
+        // ←←← ВАЖНО: Это поле предотвращает множественное срабатывание будильника
+        private readonly HashSet<Alarm> _triggeredAlarms = new HashSet<Alarm>();
 
         public MainForm()
         {
             InitializeComponent();
+
+            // Иконка в трее — всегда видна
+            notifyIcon.Visible = true;
+            notifyIcon.Text = "Clock SPU_411";
+
             SetVisibility(false);
             backgroundDialog = new ColorDialog();
             foregroundDialog = new ColorDialog();
             fontDialog = new ChooseFont();
 
-            // Загружаем будильники и создаём меню
             LoadAlarms();
             CreateAlarmsMenu();
             UpdateAlarmsMenu();
@@ -44,22 +52,21 @@ namespace Clock
             );
         }
 
-                //============= ТАЙМЕР ======================
         private void timer_Tick(object sender, EventArgs e)
         {
             var now = DateTime.Now;
+            var russianCulture = new CultureInfo("ru-RU");
 
-            labelTime.Text = now.ToString("hh:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
+            labelTime.Text = now.ToString("HH:mm:ss", russianCulture);
 
             if (checkBoxShowDate.Checked)
-                labelTime.Text += $"\n{now:yyyy.MM.dd}";
+                labelTime.Text += $"\n{now:dd.MM.yyyy}";
             if (checkBoxShowWeekday.Checked)
-                labelTime.Text += $"\n{now.DayOfWeek}";
+                labelTime.Text += $"\n{now.ToString("dddd", russianCulture)}";
 
-            CheckAlarms(); // Проверяем будильники каждую секунду
+            CheckAlarms();
         }
 
-        // ====================== ВИДИМОСТЬ КОНТРОЛОВ ======================
         void SetVisibility(bool visible)
         {
             checkBoxShowDate.Visible = visible;
@@ -70,13 +77,9 @@ namespace Clock
             this.ShowInTaskbar = visible;
         }
 
-        private void buttonHideControls_Click(object sender, EventArgs e) =>
-            SetVisibility(tsmiShowControls.Checked = false);
+        private void buttonHideControls_Click(object sender, EventArgs e) => SetVisibility(false);
+        private void labelTime_DoubleClick(object sender, EventArgs e) => SetVisibility(true);
 
-        private void labelTime_DoubleClick(object sender, EventArgs e) =>
-            SetVisibility(tsmiShowControls.Checked = true);
-
-        // ====================== МЕНЮ ======================
         private void notifyIcon_DoubleClick(object sender, EventArgs e)
         {
             this.TopMost = true;
@@ -84,24 +87,12 @@ namespace Clock
         }
 
         private void tsmiQuit_Click(object sender, EventArgs e) => this.Close();
-
-        private void tsmiTopmost_Click(object sender, EventArgs e) =>
-            this.TopMost = tsmiTopmost.Checked;
-
-        private void tsmiShowDate_Click(object sender, EventArgs e) =>
-            checkBoxShowDate.Checked = tsmiShowDate.Checked;
-
-        private void checkBoxShowDate_CheckedChanged(object sender, EventArgs e) =>
-            tsmiShowDate.Checked = checkBoxShowDate.Checked;
-
-        private void tsmiShowWeekday_Click(object sender, EventArgs e) =>
-            checkBoxShowWeekday.Checked = tsmiShowWeekday.Checked;
-
-        private void checkBoxShowWeekday_CheckedChanged(object sender, EventArgs e) =>
-            tsmiShowWeekday.Checked = (sender as CheckBox).Checked;
-
-        private void tsmiShowControls_Click(object sender, EventArgs e) =>
-            SetVisibility(tsmiShowControls.Checked);
+        private void tsmiTopmost_Click(object sender, EventArgs e) => this.TopMost = tsmiTopmost.Checked;
+        private void tsmiShowDate_Click(object sender, EventArgs e) => checkBoxShowDate.Checked = tsmiShowDate.Checked;
+        private void checkBoxShowDate_CheckedChanged(object sender, EventArgs e) => tsmiShowDate.Checked = checkBoxShowDate.Checked;
+        private void tsmiShowWeekday_Click(object sender, EventArgs e) => checkBoxShowWeekday.Checked = tsmiShowWeekday.Checked;
+        private void checkBoxShowWeekday_CheckedChanged(object sender, EventArgs e) => tsmiShowWeekday.Checked = checkBoxShowWeekday.Checked;
+        private void tsmiShowControls_Click(object sender, EventArgs e) => SetVisibility(tsmiShowControls.Checked);
 
         private void tsmiBackgroudColor_Click(object sender, EventArgs e)
         {
@@ -128,7 +119,8 @@ namespace Clock
 
         private void tsmiShowConsole_CheckedChanged(object sender, EventArgs e)
         {
-            bool console = (sender as ToolStripMenuItem).Checked ? AllocConsole() : FreeConsole();
+            if ((sender as ToolStripMenuItem).Checked) AllocConsole();
+            else FreeConsole();
         }
 
         // ====================== БУДИЛЬНИКИ ======================
@@ -137,95 +129,79 @@ namespace Clock
         {
             tsmiAlarms = new ToolStripMenuItem("Будильники");
 
-            var tsmiAdd = new ToolStripMenuItem("Добавить будильник");
-            tsmiAdd.Click += (s, e) =>
+            var addItem = new ToolStripMenuItem("Добавить будильник");
+            addItem.Click += (s, e) =>
             {
-                using (var form = new AddAlarmForm())
-                {
-                    if (form.ShowDialog() == DialogResult.OK)
+                using (var f = new AddAlarmForm())
+                    if (f.ShowDialog() == DialogResult.OK)
                     {
-                        alarms.Add(form.Alarm);
+                        alarms.Add(f.Alarm);
                         SaveAlarms();
                         UpdateAlarmsMenu();
                     }
-                }
             };
 
-            var tsmiManage = new ToolStripMenuItem("Управление будильниками");
-            tsmiManage.Click += (s, e) =>
+            var manageItem = new ToolStripMenuItem("Управление будильниками");
+            manageItem.Click += (s, e) => ShowManageForm();
+
+            tsmiAlarms.DropDownItems.Add(addItem);
+            tsmiAlarms.DropDownItems.Add(manageItem);
+            contextMenuStrip.Items.Insert(contextMenuStrip.Items.Count - 1, tsmiAlarms);
+        }
+
+        private void ShowManageForm()
+        {
+            if (alarms.Count == 0)
             {
-                if (alarms.Count == 0)
-                {
-                    MessageBox.Show("Нет будильников для управления.", "Будильники", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
+                MessageBox.Show("Нет будильников", "Инфо", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
-                var manageForm = new Form
-                {
-                    Text = "Управление будильниками",
-                    Size = new Size(500, 400),
-                    StartPosition = FormStartPosition.CenterParent
-                };
-                var listBox = new ListBox { Dock = DockStyle.Fill };
-                var btnEdit = new Button { Text = "Редактировать", Dock = DockStyle.Bottom };
-                var btnDelete = new Button { Text = "Удалить", Dock = DockStyle.Bottom };
+            var form = new Form { Text = "Управление будильниками", Size = new Size(500, 400), StartPosition = FormStartPosition.CenterParent };
+            var listBox = new ListBox { Dock = DockStyle.Fill };
+            var btnEdit = new Button { Text = "Редактировать", Dock = DockStyle.Bottom };
+            var btnDelete = new Button { Text = "Удалить", Dock = DockStyle.Bottom };
 
-                foreach (var a in alarms) listBox.Items.Add(a);
+            foreach (var a in alarms) listBox.Items.Add(a);
 
-                btnEdit.Click += (s2, e2) =>
+            btnEdit.Click += (s, e) =>
+            {
+                if (listBox.SelectedItem is Alarm alarm)
                 {
-                    if (listBox.SelectedItem is Alarm alarm)
-                    {
-                        using (var form = new AddAlarmForm(alarm))
+                    using (var f = new AddAlarmForm(alarm))
+                        if (f.ShowDialog() == DialogResult.OK)
                         {
-                            if (form.ShowDialog() == DialogResult.OK)
-                            {
-                                SaveAlarms();
-                                UpdateAlarmsMenu();
-                                listBox.Items[listBox.SelectedIndex] = alarm;
-                            }
-                        }
-                    }
-                };
-
-                btnDelete.Click += (s2, e2) =>
-                {
-                    if (listBox.SelectedItem is Alarm alarm)
-                    {
-                        if (MessageBox.Show($"Удалить будильник «{alarm.Name}»?", "Удаление", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                        {
-                            alarms.Remove(alarm);
-                            listBox.Items.Remove(alarm);
                             SaveAlarms();
                             UpdateAlarmsMenu();
+                            listBox.Items[listBox.SelectedIndex] = alarm;
                         }
-                    }
-                };
-
-                manageForm.Controls.Add(listBox);
-                manageForm.Controls.Add(btnEdit);
-                manageForm.Controls.Add(btnDelete);
-                manageForm.ShowDialog();
+                }
             };
 
-            tsmiAlarms.DropDownItems.Add(tsmiAdd);
-            tsmiAlarms.DropDownItems.Add(tsmiManage);
+            btnDelete.Click += (s, e) =>
+            {
+                if (listBox.SelectedItem is Alarm alarm && MessageBox.Show("Удалить будильник?", "Удаление", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    alarms.Remove(alarm);
+                    listBox.Items.Remove(alarm);
+                    SaveAlarms();
+                    UpdateAlarmsMenu();
+                }
+            };
 
-            // Вставляем перед "Quit"
-            contextMenuStrip.Items.Insert(contextMenuStrip.Items.Count - 1, tsmiAlarms);
+            form.Controls.Add(listBox);
+            form.Controls.Add(btnEdit);
+            form.Controls.Add(btnDelete);
+            form.ShowDialog();
         }
 
         private void UpdateAlarmsMenu()
         {
             if (tsmiAlarms == null) return;
 
-            // Удаляем старые динамические пункты
-            var toRemove = tsmiAlarms.DropDownItems.OfType<ToolStripMenuItem>()
-                .Where(x => x.Tag is Alarm).ToList();
-            foreach (var item in toRemove)
-                tsmiAlarms.DropDownItems.Remove(item);
+            var oldItems = tsmiAlarms.DropDownItems.OfType<ToolStripMenuItem>().Where(x => x.Tag is Alarm).ToList();
+            foreach (var item in oldItems) tsmiAlarms.DropDownItems.Remove(item);
 
-            // Добавляем текущие будильники
             foreach (var alarm in alarms)
             {
                 var item = new ToolStripMenuItem(alarm.ToString())
@@ -234,11 +210,7 @@ namespace Clock
                     CheckOnClick = true,
                     Checked = alarm.Enabled
                 };
-                item.Click += (s, e) =>
-                {
-                    alarm.Enabled = item.Checked;
-                    SaveAlarms();
-                };
+                item.Click += (s, e) => { alarm.Enabled = item.Checked; SaveAlarms(); };
                 tsmiAlarms.DropDownItems.Add(item);
             }
         }
@@ -248,22 +220,63 @@ namespace Clock
             var now = DateTime.Now;
             foreach (var alarm in alarms.Where(a => a.Enabled))
             {
-                if (now.Hour == alarm.Time.Hours && now.Minute == alarm.Time.Minutes && now.Second < 3)
+                // Срабатывает ТОЛЬКО ОДИН РАЗ — в начале нужной минуты (секунда == 0)
+                if (now.Hour == alarm.Time.Hours &&
+                    now.Minute == alarm.Time.Minutes &&
+                    now.Second == 0 &&
+                    !_triggeredAlarms.Contains(alarm))
                 {
-                    // Звук
-                    if (!string.IsNullOrEmpty(alarm.SoundPath) && File.Exists(alarm.SoundPath))
+                    _triggeredAlarms.Add(alarm);
+
+                    // === ЗВУК (безопасно, один раз) ===
+                    Task.Run(() =>
                     {
                         try
                         {
-                            soundPlayer.SoundLocation = alarm.SoundPath;
-                            soundPlayer.Play();
+                            if (!string.IsNullOrEmpty(alarm.SoundPath) && File.Exists(alarm.SoundPath))
+                            {
+                                if (alarm.SoundPath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var player = new System.Media.SoundPlayer(alarm.SoundPath);
+                                    player.PlaySync();
+                                    player.Dispose();
+                                }
+                                else
+                                {
+                                    var psi = new ProcessStartInfo
+                                    {
+                                        FileName = alarm.SoundPath,
+                                        UseShellExecute = true,
+                                        CreateNoWindow = true,
+                                        ErrorDialog = false
+                                    };
+                                    Process.Start(psi);
+                                }
+                            }
                         }
                         catch { }
-                    }
+                    });
 
-                    // Оповещение
-                    MessageBox.Show($"Будильник!\n{alarm.Name}\n{alarm.Time:h\\:mm}",
+                    // === Уведомление ===
+                    string timeText = alarm.Time.ToString(@"hh\:mm");
+
+                    notifyIcon.ShowBalloonTip(10000, "Будильник!", $"{alarm.Name} — {timeText}", ToolTipIcon.Info);
+
+                    if (this.WindowState == FormWindowState.Minimized)
+                        this.WindowState = FormWindowState.Normal;
+
+                    this.Show();
+                    this.BringToFront();
+                    this.Activate();
+
+                    MessageBox.Show($"Будильник!\n{alarm.Name}\n{timeText}",
                         "Время пришло!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                }
+
+                // Сбрасываем флаг после прохождения минуты
+                if (now.Hour != alarm.Time.Hours || now.Minute != alarm.Time.Minutes)
+                {
+                    _triggeredAlarms.Remove(alarm);
                 }
             }
         }
@@ -296,7 +309,5 @@ namespace Clock
             SaveAlarms();
             base.OnFormClosing(e);
         }
-
-        private void MainForm_Load(object sender, EventArgs e) { }
     }
 }
