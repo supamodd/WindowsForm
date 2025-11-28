@@ -20,7 +20,7 @@ namespace Clock
         ColorDialog foregroundDialog;
         ChooseFont fontDialog;
 
-                                                              // ======== БУДИЛЬНИКИ ========
+                                                              // ======== БУИДИЛЬНИКИ ========
          List<Alarm> alarms = new List<Alarm>();
         string settingsFile = Path.Combine(Application.StartupPath, "alarms.json");
         System.Media.SoundPlayer soundPlayer = new System.Media.SoundPlayer();
